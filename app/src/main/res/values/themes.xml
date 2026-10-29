@@ -1,0 +1,244 @@
+<resources>
+    <!-- 黄黑警示风：直角、粗黑描边、右下硬投影；颜色随 values-night 切换深色模式 -->
+    <style name="Theme.PoseAlarm" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/selected_bg</item>
+        <item name="colorOnPrimary">@color/on_selected</item>
+        <item name="colorPrimaryContainer">@color/hazard</item>
+        <item name="colorOnPrimaryContainer">@color/on_hazard</item>
+        <item name="colorSecondary">@color/hazard</item>
+        <item name="colorOnSecondary">@color/on_hazard</item>
+        <item name="colorSecondaryContainer">@color/hazard</item>
+        <item name="colorOnSecondaryContainer">@color/on_hazard</item>
+        <item name="colorTertiary">@color/hazard</item>
+        <item name="colorOnTertiary">@color/on_hazard</item>
+        <item name="colorError">@color/danger</item>
+        <item name="colorSurface">@color/bg_card</item>
+        <item name="colorOnSurface">@color/text_main</item>
+        <item name="colorSurfaceVariant">@color/bg_sunken</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary</item>
+        <!-- 关掉 Material3 的分层色调，卡片 / 弹层统一为纯色 -->
+        <item name="colorSurfaceContainerLowest">@color/bg_card</item>
+        <item name="colorSurfaceContainerLow">@color/bg_card</item>
+        <item name="colorSurfaceContainer">@color/bg_card</item>
+        <item name="colorSurfaceContainerHigh">@color/bg_card</item>
+        <item name="colorSurfaceContainerHighest">@color/bg_sunken</item>
+        <item name="colorOutline">@color/line</item>
+        <item name="colorOutlineVariant">@color/line_soft</item>
+        <!-- 输入框下划线 / 光标：浅色为黑、深色为黄，避免白底上的黄色看不清 -->
+        <item name="colorControlActivated">@color/selected_bg</item>
+        <item name="colorControlHighlight">@color/ripple</item>
+        <item name="android:colorBackground">@color/bg_page</item>
+        <item name="android:windowBackground">@color/bg_page</item>
+        <item name="android:textColorPrimary">@color/text_main</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:textColorHint">@color/text_hint</item>
+        <item name="android:statusBarColor">@color/bar_bg</item>
+        <item name="android:navigationBarColor">@color/bar_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="alertDialogTheme">@style/ThemeOverlay.PoseAlarm.Dialog</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.PoseAlarm.BottomSheet</item>
+    </style>
+
+    <!-- 方角形状 -->
+    <style name="ShapeAppearance.PoseAlarm.Square" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">0dp</item>
+    </style>
+
+    <!-- ===== 文字 ===== -->
+    <!-- 标题栏标题：警示黄粗体 -->
+    <style name="TextAppearance.PoseAlarm.ToolbarTitle" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.02</item>
+        <item name="android:textColor">@color/hazard</item>
+    </style>
+
+    <style name="TextAppearance.PoseAlarm.ToolbarSubtitle" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:letterSpacing">0.03</item>
+        <item name="android:textColor">@color/bar_subtitle</item>
+    </style>
+
+    <style name="TextAppearance.PoseAlarm.Button" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.02</item>
+    </style>
+
+    <style name="TextAppearance.PoseAlarm.Chip" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- 对话框 / 底部弹层标题 -->
+    <style name="TextAppearance.PoseAlarm.DialogTitle" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textSize">19sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/text_main</item>
+    </style>
+
+    <!-- ===== 标题栏 ===== -->
+    <style name="ThemeOverlay.PoseAlarm.Toolbar" parent="ThemeOverlay.Material3.Dark.ActionBar">
+        <!-- 右上角溢出菜单图标为警示黄 -->
+        <item name="colorControlNormal">@color/hazard</item>
+        <item name="colorControlHighlight">#33FFD60A</item>
+        <!-- 标题栏上的文字按钮 (切换废料登记) 同为警示黄 -->
+        <item name="actionMenuTextColor">@color/hazard</item>
+    </style>
+
+    <!-- 标题栏溢出菜单：直角粗框弹层；文字颜色显式指定，避免继承标题栏的深色覆盖 -->
+    <style name="ThemeOverlay.PoseAlarm.Popup" parent="ThemeOverlay.Material3">
+        <item name="colorSurface">@color/bg_card</item>
+        <item name="colorOnSurface">@color/text_main</item>
+        <item name="colorControlHighlight">@color/ripple</item>
+        <item name="android:textColorPrimary">@color/text_main</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="actionOverflowMenuStyle">@style/Widget.PoseAlarm.PopupMenu.Overflow</item>
+        <item name="popupMenuStyle">@style/Widget.PoseAlarm.PopupMenu</item>
+        <item name="textAppearanceLargePopupMenu">@style/TextAppearance.PoseAlarm.PopupMenu</item>
+        <item name="textAppearanceSmallPopupMenu">@style/TextAppearance.PoseAlarm.PopupMenu</item>
+    </style>
+
+    <style name="Widget.PoseAlarm.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/bg_popup</item>
+        <item name="android:popupElevation">0dp</item>
+    </style>
+
+    <style name="Widget.PoseAlarm.PopupMenu.Overflow" parent="Widget.Material3.PopupMenu.Overflow">
+        <item name="android:popupBackground">@drawable/bg_popup</item>
+        <item name="android:popupElevation">0dp</item>
+    </style>
+
+    <style name="TextAppearance.PoseAlarm.PopupMenu" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textColor">@color/text_main</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <!-- ===== 按钮 ===== -->
+    <!-- 底部操作按钮：自绘直角硬投影背景 (backgroundTint 置空才能使用自定义 background) -->
+    <style name="Widget.PoseAlarm.Button.Hard" parent="Widget.Material3.Button">
+        <item name="android:background">@drawable/btn_hard_secondary</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:textColor">@color/sel_btn_text</item>
+        <item name="iconTint">@color/sel_btn_text</item>
+        <item name="android:textAppearance">@style/TextAppearance.PoseAlarm.Button</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:elevation">0dp</item>
+        <item name="android:minHeight">52dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <!-- 右下 3dp 是投影区，内边距相应加大让文字居中于色块 -->
+        <item name="android:paddingBottom">@dimen/hard_shadow</item>
+    </style>
+
+    <style name="Widget.PoseAlarm.Button.Hard.Primary">
+        <item name="android:background">@drawable/btn_hard_primary</item>
+        <item name="android:textColor">@color/sel_btn_primary_text</item>
+        <item name="iconTint">@color/sel_btn_primary_text</item>
+    </style>
+
+    <!-- ===== 标签 (Chip) ===== -->
+    <!-- 页面切换标签：选中反色 -->
+    <style name="Widget.PoseAlarm.Chip.Page" parent="Widget.Material3.Chip.Filter">
+        <item name="chipBackgroundColor">@color/sel_selectable_bg</item>
+        <item name="android:textColor">@color/sel_selectable_text</item>
+        <item name="chipStrokeColor">@color/sel_line</item>
+        <item name="chipStrokeWidth">@dimen/stroke_regular</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.PoseAlarm.Square</item>
+        <item name="android:textAppearance">@style/TextAppearance.PoseAlarm.Chip</item>
+        <item name="checkedIconVisible">false</item>
+        <item name="rippleColor">@color/ripple</item>
+        <item name="chipMinHeight">34dp</item>
+    </style>
+
+    <!-- ===== 空状态使用步骤 (activity_main 的 layout_empty_steps) ===== -->
+    <style name="Widget.PoseAlarm.EmptyStep" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">10dp</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+
+    <!-- 步骤序号：黄底描边小方块 -->
+    <style name="Widget.PoseAlarm.EmptyStep.Number" parent="">
+        <item name="android:layout_width">22dp</item>
+        <item name="android:layout_height">22dp</item>
+        <item name="android:background">@drawable/bg_tag_hazard</item>
+        <item name="android:gravity">center</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:textColor">@color/on_hazard</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Widget.PoseAlarm.EmptyStep.Text" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginStart">10dp</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+        <item name="android:textColor">@color/text_main</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <!-- 对话框里的分组小标题 -->
+    <style name="Widget.PoseAlarm.FieldLabel" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">14dp</item>
+        <item name="android:layout_marginBottom">6dp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- ===== 对话框 (androidx AlertDialog.Builder 全局生效) ===== -->
+    <style name="ThemeOverlay.PoseAlarm.Dialog" parent="ThemeOverlay.Material3.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/bg_dialog</item>
+        <item name="android:windowElevation">0dp</item>
+        <item name="android:windowTitleStyle">@style/Widget.PoseAlarm.DialogTitle</item>
+        <item name="android:textColorPrimary">@color/text_main</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="colorPrimary">@color/text_main</item>
+        <item name="colorControlActivated">@color/text_main</item>
+        <item name="colorControlHighlight">@color/ripple</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.PoseAlarm.DialogButton.Positive</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.PoseAlarm.DialogButton</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.PoseAlarm.DialogButton</item>
+    </style>
+
+    <style name="Widget.PoseAlarm.DialogTitle" parent="RtlOverlay.DialogWindowTitle.AppCompat">
+        <item name="android:textAppearance">@style/TextAppearance.PoseAlarm.DialogTitle</item>
+        <item name="android:maxLines">2</item>
+    </style>
+
+    <style name="Widget.PoseAlarm.DialogButton" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/text_main</item>
+        <item name="android:textAppearance">@style/TextAppearance.PoseAlarm.Button</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.PoseAlarm.Square</item>
+        <item name="rippleColor">@color/ripple</item>
+    </style>
+
+    <!-- 对话框主按钮：黄底黑框 -->
+    <style name="Widget.PoseAlarm.DialogButton.Positive">
+        <item name="backgroundTint">@color/sel_dialog_positive_bg</item>
+        <item name="android:textColor">@color/on_hazard</item>
+        <item name="strokeColor">@color/line</item>
+        <item name="strokeWidth">@dimen/stroke_bold</item>
+    </style>
+
+    <!-- ===== 底部弹层 ===== -->
+    <style name="ThemeOverlay.PoseAlarm.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.PoseAlarm.BottomSheet</item>
+        <item name="android:navigationBarColor">@color/bg_card</item>
+    </style>
+
+    <style name="Widget.PoseAlarm.BottomSheet" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="backgroundTint">@color/bg_card</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.PoseAlarm.Square</item>
+        <item name="shapeAppearanceOverlay">@null</item>
+        <item name="android:elevation">0dp</item>
+    </style>
+</resources>

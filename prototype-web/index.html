@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>起床动起来</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;800&family=Noto+Sans+SC:wght@400;600;900&display=swap">
+<style>
+  /* 布局：一块“闹钟面板”居中，响铃时切换为全屏摄像头任务界面 */
+  :root {
+    --bg: #101418;
+    --panel: #181e24;
+    --line: #2a333c;
+    --fg: #e8edf1;
+    --muted: #8a97a3;
+    --accent: #ffb020;
+    --alarm: #ff4d3d;
+    --ok: #3ddc84;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    --sans: "Noto Sans SC", "PingFang SC", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--fg); font: 15px/1.6 var(--sans);
+    display: grid; place-items: center;
+    padding-block: 24px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { width: 100%; max-width: 520px; display: grid; gap: 20px; }
+  .now { font: 800 clamp(56px, 16vw, 96px)/1 var(--mono); letter-spacing: -0.02em; text-align: center; font-variant-numeric: tabular-nums; }
+  .now small { font-size: 0.35em; color: var(--muted); font-weight: 500; }
+  .sub { text-align: center; color: var(--muted); margin-top: -8px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 18px; }
+  label.h { font-size: 12px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 8px; }
+  input[type=time], input[type=number] {
+    background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 10px;
+    font: 800 28px var(--mono); padding: 8px 12px; width: 100%;
+  }
+  input[type=number] { font-size: 22px; width: 120px; }
+  input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .chips { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .chip { position: relative; }
+  .chip input { position: absolute; opacity: 0; }
+  .chip span { display: block; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; cursor: pointer; }
+  .chip span b { display: block; font-weight: 600; }
+  .chip span i { font-style: normal; font-size: 12px; color: var(--muted); }
+  .chip input:checked + span { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+  .chip input:focus-visible + span { outline: 2px solid var(--accent); }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  button {
+    font: 600 16px var(--sans); border-radius: 10px; border: 1px solid var(--line);
+    background: var(--panel); color: var(--fg); padding: 12px 18px; cursor: pointer;
+  }
+  button.primary { background: var(--accent); color: #1a1205; border-color: var(--accent); font-weight: 900; flex: 1; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .status { font-size: 14px; color: var(--muted); min-height: 1.6em; }
+  .status.warn { color: var(--accent); }
+  .armed { text-align: center; display: grid; gap: 6px; }
+  .armed .cd { font: 800 40px var(--mono); color: var(--accent); font-variant-numeric: tabular-nums; }
+  .note { font-size: 13px; color: var(--muted); }
+
+  /* 响铃界面 */
+  #ring { position: fixed; inset: 0; background: #000; display: grid; grid-template-rows: auto 1fr auto; z-index: 5; }
+  #ring::after { content: ""; position: absolute; inset: 0; pointer-events: none; border: 10px solid var(--alarm); animation: flash 0.8s steps(2) infinite; }
+  #ring.done::after { border-color: var(--ok); animation: none; }
+  @keyframes flash { 50% { border-color: transparent; } }
+  .ring-top { padding: calc(14px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) 10px max(20px, env(safe-area-inset-left, 0px)); display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; position: relative; z-index: 2; }
+  .ring-top h1 { margin: 0; font: 900 clamp(22px, 5vw, 34px)/1.2 var(--sans); }
+  .ring-top .clock { font: 800 28px var(--mono); color: var(--alarm); }
+  .stage { position: relative; overflow: hidden; display: grid; place-items: center; }
+  .stage video, .stage canvas { position: absolute; max-width: 100%; max-height: 100%; width: 100%; height: 100%; object-fit: contain; transform: scaleX(-1); }
+  .big { position: relative; z-index: 2; font: 800 clamp(80px, 22vw, 200px)/1 var(--mono); color: #fff; text-shadow: 0 4px 30px #000; font-variant-numeric: tabular-nums; }
+  .big small { font-size: 0.3em; color: var(--muted); }
+  .ring-bot { padding: 12px max(20px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px)); display: grid; gap: 10px; position: relative; z-index: 2; }
+  .bar { height: 14px; background: #222; border-radius: 7px; overflow: hidden; }
+  .bar > div { height: 100%; width: 0; background: var(--accent); transition: width 0.15s; }
+  #ring.done .bar > div { background: var(--ok); }
+  .hint { color: #cfd6dc; font-size: 15px; }
+  .pose-state { font: 600 14px var(--mono); color: var(--muted); }
+  .pose-state.on { color: var(--ok); }
+  @media (prefers-reduced-motion: reduce) { #ring::after { animation: none; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div>
+    <div class="now" id="now">--:--<small>:--</small></div>
+    <div class="sub">起床动起来 · 做完动作才会停的闹钟</div>
+  </div>
+
+  <section class="panel" id="setup">
+    <div>
+      <label class="h" for="time">闹钟时间</label>
+      <input type="time" id="time" value="07:00">
+    </div>
+    <div>
+      <span class="h" style="display:block;font-size:12px;letter-spacing:.12em;color:var(--muted);margin-bottom:8px">关闹钟的任务</span>
+      <div class="chips" id="missions"></div>
+    </div>
+    <div class="row">
+      <label class="h" for="target" style="margin:0">目标</label>
+      <input type="number" id="target" min="1" max="200" value="10">
+      <span id="unit">个</span>
+    </div>
+    <div class="row">
+      <button class="primary" id="arm">设定闹钟</button>
+      <button id="test">5 秒后试响</button>
+    </div>
+    <div class="status" id="status">设定时会请求摄像头权限并加载姿势模型。</div>
+  </section>
+
+  <section class="panel armed" id="armedPanel" hidden>
+    <div class="note">闹钟将在</div>
+    <div class="cd" id="cd">--:--:--</div>
+    <div class="note" id="armedInfo"></div>
+    <div class="note">保持这个页面打开、电脑插电、不要合盖。<br>摄像头要能拍到你的全身（至少膝盖以上）。</div>
+    <div><button id="cancel">取消闹钟</button></div>
+  </section>
+</main>
+
+<div id="ring" hidden>
+  <div class="ring-top">
+    <h1 id="ringTitle">起床！</h1>
+    <div class="clock" id="ringClock">--:--</div>
+  </div>
+  <div class="stage">
+    <video id="video" playsinline muted></video>
+    <canvas id="canvas"></canvas>
+    <div class="big" id="big">0<small>/10</small></div>
+  </div>
+  <div class="ring-bot">
+    <div class="bar"><div id="bar"></div></div>
+    <div class="hint" id="hint"></div>
+    <div class="pose-state" id="poseState">正在打开摄像头…</div>
+    <div class="row" id="ringActions" hidden><button id="retryCam">重新打开摄像头</button></div>
+    <div class="row" id="doneActions" hidden><button class="primary" id="closeRing">任务完成，早上好</button></div>
+  </div>
+</div>
+
+<script type="module">
+import { PoseLandmarker, FilesetResolver, DrawingUtils } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+const $ = id => document.getElementById(id);
+const MODEL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+const WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
+
+// 关键点编号（MediaPipe Pose）
+const P = { nose: 0, lSh: 11, rSh: 12, lEl: 13, rEl: 14, lWr: 15, rWr: 16, lHip: 23, rHip: 24, lKn: 25, rKn: 26, lAn: 27, rAn: 28 };
+
+const MISSIONS = {
+  squat:   { name: "深蹲", unit: "个", def: 10, kind: "reps", tip: "蹲到大腿接近水平（膝盖小于 105°），再站直，算 1 个。" },
+  jack:    { name: "开合跳", unit: "个", def: 15, kind: "reps", tip: "双手举过头顶、双脚分开，再收回到双手放下，算 1 个。" },
+  handsup: { name: "双手举高", unit: "秒", def: 15, kind: "hold", tip: "双臂伸直举过头顶并保持，放下会重新计时。" },
+  tpose:   { name: "T 字站姿", unit: "秒", def: 15, kind: "hold", tip: "双臂向两侧水平伸直，和肩同高，放下会重新计时。" },
+};
+
+// ---------- 姿势判断 ----------
+let W = 1, H = 1; // 视频像素尺寸，用来把归一化坐标还原成真实比例
+const vis = (lm, ...ids) => ids.every(i => (lm[i].visibility ?? 1) > 0.5);
+const pt = (lm, i) => ({ x: lm[i].x * W, y: lm[i].y * H });
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+function angle(a, b, c) {
+  const v1 = { x: a.x - b.x, y: a.y - b.y }, v2 = { x: c.x - b.x, y: c.y - b.y };
+  const cos = (v1.x * v2.x + v1.y * v2.y) / (Math.hypot(v1.x, v1.y) * Math.hypot(v2.x, v2.y) || 1);
+  return Math.acos(Math.max(-1, Math.min(1, cos))) * 180 / Math.PI;
+}
+
+const detect = {
+  // 返回 "active" / "rest" / null（看不清）
+  squat(lm) {
+    const angs = [];
+    if (vis(lm, P.lHip, P.lKn, P.lAn)) angs.push(angle(pt(lm, P.lHip), pt(lm, P.lKn), pt(lm, P.lAn)));
+    if (vis(lm, P.rHip, P.rKn, P.rAn)) angs.push(angle(pt(lm, P.rHip), pt(lm, P.rKn), pt(lm, P.rAn)));
+    if (!angs.length) return { phase: null, info: "看不到腿，请退后让膝盖和脚踝入镜" };
+    const a = angs.reduce((s, x) => s + x, 0) / angs.length;
+    return { phase: a < 105 ? "active" : a > 155 ? "rest" : "mid", info: `膝盖角度 ${a.toFixed(0)}°` };
+  },
+  jack(lm) {
+    if (!vis(lm, P.lSh, P.rSh, P.lWr, P.rWr, P.nose)) return { phase: null, info: "看不到上半身和双手" };
+    const sw = dist(pt(lm, P.lSh), pt(lm, P.rSh));
+    const shY = (pt(lm, P.lSh).y + pt(lm, P.rSh).y) / 2;
+    const noseY = pt(lm, P.nose).y;
+    const armsUp = pt(lm, P.lWr).y < noseY && pt(lm, P.rWr).y < noseY;
+    const armsDown = pt(lm, P.lWr).y > shY && pt(lm, P.rWr).y > shY;
+    let legsOpen = true, legsClosed = true, legInfo = "（脚不在画面里，只看手）";
+    if (vis(lm, P.lAn, P.rAn)) {
+      const ad = Math.abs(pt(lm, P.lAn).x - pt(lm, P.rAn).x);
+      legsOpen = ad > sw * 1.3; legsClosed = ad < sw * 1.1;
+      legInfo = legsOpen ? "脚：分开" : legsClosed ? "脚：并拢" : "脚：半开";
+    }
+    const phase = armsUp && legsOpen ? "active" : armsDown && legsClosed ? "rest" : "mid";
+    return { phase, info: `手：${armsUp ? "举起" : armsDown ? "放下" : "中间"} ${legInfo}` };
+  },
+  handsup(lm) {
+    if (!vis(lm, P.nose, P.lSh, P.rSh, P.lEl, P.rEl, P.lWr, P.rWr)) return { ok: null, info: "看不到双臂" };
+    const noseY = pt(lm, P.nose).y;
+    const ok = pt(lm, P.lWr).y < noseY && pt(lm, P.rWr).y < noseY
+      && pt(lm, P.lEl).y < pt(lm, P.lSh).y && pt(lm, P.rEl).y < pt(lm, P.rSh).y;
+    return { ok, info: ok ? "姿势正确，保持住" : "把双手伸直举过头顶" };
+  },
+  tpose(lm) {
+    if (!vis(lm, P.lSh, P.rSh, P.lEl, P.rEl, P.lWr, P.rWr)) return { ok: null, info: "看不到双臂，请退后一点" };
+    const ls = pt(lm, P.lSh), rs = pt(lm, P.rSh), lw = pt(lm, P.lWr), rw = pt(lm, P.rWr);
+    const sw = dist(ls, rs);
+    const level = Math.abs(lw.y - ls.y) < sw * 0.45 && Math.abs(rw.y - rs.y) < sw * 0.45;
+    const wide = Math.abs(lw.x - rw.x) > sw * 2.4;
+    const straight = angle(ls, pt(lm, P.lEl), lw) > 150 && angle(rs, pt(lm, P.rEl), rw) > 150;
+    const ok = level && wide && straight;
+    return { ok, info: ok ? "姿势正确，保持住" : !level ? "手臂和肩膀保持同一高度" : !straight ? "把手臂伸直" : "双臂再向两侧展开" };
+  },
+};
+
+// ---------- 状态 ----------
+let state = "idle", alarmAt = 0, audioCtx = null, master = null, keepAlive = null, beepTimer = null;
+let landmarker = null, stream = null, rafId = 0, wakeLock = null, ringStart = 0;
+let task = null; // { key, target, count, held, seenActive, lastOk, lastT }
+
+// ---------- 时钟 ----------
+const pad = n => String(n).padStart(2, "0");
+function tick() {
+  const d = new Date();
+  $("now").innerHTML = `${pad(d.getHours())}:${pad(d.getMinutes())}<small>:${pad(d.getSeconds())}</small>`;
+  $("ringClock").textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  if (state === "armed") {
+    const left = Math.max(0, alarmAt - Date.now());
+    const s = Math.ceil(left / 1000);
+    $("cd").textContent = `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`;
+    if (left <= 0) ring();
+  }
+}
+setInterval(tick, 250); tick();
+
+// ---------- 任务选择 ----------
+let missionKey = "squat";
+try { missionKey = localStorage.getItem("pa.mission") || missionKey; } catch {}
+$("missions").innerHTML = Object.entries(MISSIONS).map(([k, m]) =>
+  `<label class="chip"><input type="radio" name="mission" id="m-${k}" value="${k}" ${k === missionKey ? "checked" : ""}><span><b>${m.name}</b><i>${m.kind === "reps" ? "计次数" : "保持秒数"}</i></span></label>`).join("");
+function syncMission(resetTarget) {
+  const m = MISSIONS[missionKey];
+  $("unit").textContent = m.unit;
+  if (resetTarget) $("target").value = m.def;
+}
+$("missions").addEventListener("change", e => {
+  missionKey = e.target.value; syncMission(true);
+  try { localStorage.setItem("pa.mission", missionKey); } catch {}
+});
+try { const t = localStorage.getItem("pa.time"); if (t) $("time").value = t; } catch {}
+syncMission(true);
+
+const setStatus = (t, warn) => { $("status").textContent = t; $("status").className = "status" + (warn ? " warn" : ""); };
+
+async function loadModel() {
+  if (landmarker) return landmarker;
+  const fs = await FilesetResolver.forVisionTasks(WASM);
+  const opts = d => ({ baseOptions: { modelAssetPath: MODEL, delegate: d }, runningMode: "VIDEO", numPoses: 1 });
+  try { landmarker = await PoseLandmarker.createFromOptions(fs, opts("GPU")); }
+  catch { landmarker = await PoseLandmarker.createFromOptions(fs, opts("CPU")); }
+  return landmarker;
+}
+
+function setupAudio() {
+  if (!audioCtx) {
+    audioCtx = new AudioContext();
+    master = audioCtx.createGain(); master.gain.value = 0; master.connect(audioCtx.destination);
+  }
+  audioCtx.resume();
+  // 几乎听不见的低频音，让浏览器把标签页当作“正在播放音频”，避免后台计时被节流
+  if (!keepAlive) {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.frequency.value = 30; g.gain.value = 0.002; o.connect(g).connect(audioCtx.destination); o.start();
+    keepAlive = { o, g };
+  }
+}
+
+async function requestWake() {
+  try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {}
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && state !== "idle") requestWake(); });
+
+async function arm(at) {
+  $("arm").disabled = $("test").disabled = true;
+  try {
+    setupAudio();
+    setStatus("正在请求摄像头权限…");
+    const s = await navigator.mediaDevices.getUserMedia({ video: true });
+    s.getTracks().forEach(t => t.stop());
+    setStatus("正在加载姿势识别模型…");
+    await loadModel();
+  } catch (e) {
+    setStatus("准备失败：" + (e.name === "NotAllowedError" ? "摄像头权限被拒绝，请在地址栏允许摄像头后重试。" : e.message), true);
+    $("arm").disabled = $("test").disabled = false;
+    return;
+  }
+  const target = Math.max(1, Math.min(200, parseInt($("target").value, 10) || MISSIONS[missionKey].def));
+  task = { key: missionKey, target };
+  alarmAt = at; state = "armed";
+  requestWake();
+  const d = new Date(at), m = MISSIONS[missionKey];
+  $("armedInfo").textContent = `${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())} 响铃 · 任务：${m.name} ${target} ${m.unit}`;
+  $("setup").hidden = true; $("armedPanel").hidden = false;
+  $("arm").disabled = $("test").disabled = false;
+  setStatus("");
+  tick();
+}
+
+$("arm").onclick = () => {
+  const [h, mi] = $("time").value.split(":").map(Number);
+  if (Number.isNaN(h)) return setStatus("请先选择时间", true);
+  try { localStorage.setItem("pa.time", $("time").value); } catch {}
+  const d = new Date(); d.setHours(h, mi, 0, 0);
+  if (d <= new Date()) d.setDate(d.getDate() + 1);
+  arm(d.getTime());
+};
+$("test").onclick = () => arm(Date.now() + 5000);
+$("cancel").onclick = () => {
+  state = "idle"; $("armedPanel").hidden = true; $("setup").hidden = false;
+  wakeLock?.release?.(); wakeLock = null;
+};
+
+window.addEventListener("beforeunload", e => { if (state !== "idle") { e.preventDefault(); e.returnValue = ""; } });
+
+// ---------- 响铃 ----------
+function startBeeping() {
+  ringStart = audioCtx.currentTime;
+  let n = 0;
+  const beep = () => {
+    const t = audioCtx.currentTime;
+    // 音量 1 分钟内从 0.25 涨到 1
+    master.gain.setTargetAtTime(Math.min(1, 0.25 + (t - ringStart) / 80), t, 0.5);
+    for (let i = 0; i < 4; i++) {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = "square"; o.frequency.value = n % 2 ? 1046 : 880;
+      const s = t + i * 0.13;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(0.5, s + 0.01); g.gain.setValueAtTime(0.5, s + 0.08); g.gain.linearRampToValueAtTime(0, s + 0.1);
+      o.connect(g).connect(master); o.start(s); o.stop(s + 0.11);
+    }
+    n++;
+  };
+  beep(); beepTimer = setInterval(beep, 900);
+}
+function stopBeeping() {
+  clearInterval(beepTimer); beepTimer = null;
+  master.gain.cancelScheduledValues(audioCtx.currentTime); master.gain.setValueAtTime(0, audioCtx.currentTime);
+}
+
+async function startCamera() {
+  $("ringActions").hidden = true;
+  $("poseState").textContent = "正在打开摄像头…"; $("poseState").className = "pose-state";
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" } });
+    const v = $("video"); v.srcObject = stream; await v.play();
+    W = v.videoWidth; H = v.videoHeight;
+    $("canvas").width = W; $("canvas").height = H;
+    await loadModel();
+    loop();
+  } catch (e) {
+    $("poseState").textContent = "摄像头打不开：" + e.message + "。闹钟会一直响，修好摄像头后点下面的按钮。";
+    $("ringActions").hidden = false;
+  }
+}
+$("retryCam").onclick = startCamera;
+
+function ring() {
+  if (state === "ringing") return;
+  state = "ringing";
+  Object.assign(task, { count: 0, held: 0, phase: "rest", seenActive: false, lastOk: 0, lastT: performance.now() });
+  const m = MISSIONS[task.key];
+  $("ringTitle").textContent = `起床！${m.name} ${task.target} ${m.unit}`;
+  $("hint").textContent = m.tip;
+  $("ring").hidden = false; $("ring").classList.remove("done"); $("doneActions").hidden = true;
+  render();
+  setupAudio(); startBeeping(); requestWake();
+  startCamera();
+}
+
+let draw = null;
+function loop() {
+  if (state !== "ringing" && state !== "done") return;
+  const v = $("video"), ctx = $("canvas").getContext("2d");
+  draw ||= new DrawingUtils(ctx);
+  const now = performance.now();
+  if (v.readyState >= 2) {
+    const res = landmarker.detectForVideo(v, now);
+    ctx.clearRect(0, 0, W, H);
+    const lm = res.landmarks?.[0];
+    if (lm) {
+      draw.drawConnectors(lm, PoseLandmarker.POSE_CONNECTIONS, { color: "#ffb020", lineWidth: 5 });
+      draw.drawLandmarks(lm, { color: "#fff", fillColor: "#ff4d3d", radius: 4, lineWidth: 1 });
+      if (state === "ringing") update(lm, now);
+    } else {
+      $("poseState").textContent = "画面里没看到人，站到镜头前"; $("poseState").className = "pose-state";
+      if (state === "ringing") task.lastT = now;
+    }
+  }
+  rafId = requestAnimationFrame(loop);
+}
+
+function update(lm, now) {
+  const m = MISSIONS[task.key], r = detect[task.key](lm);
+  const dt = (now - task.lastT) / 1000; task.lastT = now;
+  if (m.kind === "reps") {
+    if (r.phase === "active") task.seenActive = true;
+    if (r.phase === "rest" && task.seenActive) { task.count++; task.seenActive = false; }
+    $("poseState").className = "pose-state" + (r.phase === "active" ? " on" : "");
+    $("poseState").textContent = r.info + (task.seenActive ? " · 到位了，回到起始姿势计数" : "");
+  } else {
+    if (r.ok) { task.held += dt; task.lastOk = now; }
+    else if (now - task.lastOk > 500) task.held = 0; // 断开超过 0.5 秒就重新计时
+    $("poseState").className = "pose-state" + (r.ok ? " on" : "");
+    $("poseState").textContent = r.info;
+  }
+  render();
+  const progress = m.kind === "reps" ? task.count : task.held;
+  if (progress >= task.target) finish();
+}
+
+function render() {
+  const m = MISSIONS[task.key];
+  const val = m.kind === "reps" ? task.count : Math.floor(task.held);
+  $("big").innerHTML = `${val}<small>/${task.target}${m.unit === "秒" ? "s" : ""}</small>`;
+  $("bar").style.width = Math.min(100, (m.kind === "reps" ? task.count : task.held) / task.target * 100) + "%";
+}
+
+function finish() {
+  state = "done";
+  stopBeeping();
+  $("ring").classList.add("done");
+  $("ringTitle").textContent = "完成！闹钟已停";
+  $("poseState").textContent = "早上好。";
+  $("doneActions").hidden = false;
+  render();
+}
+
+$("closeRing").onclick = () => {
+  cancelAnimationFrame(rafId);
+  stream?.getTracks().forEach(t => t.stop()); stream = null;
+  $("ring").hidden = true;
+  state = "idle"; $("armedPanel").hidden = true; $("setup").hidden = false;
+  wakeLock?.release?.(); wakeLock = null;
+};
+</script>
+</body>
+</html>

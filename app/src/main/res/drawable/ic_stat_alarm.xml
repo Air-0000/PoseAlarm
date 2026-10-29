@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 通知栏小图标：双手举高的小人 (单色) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,3.6m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0"/>
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M6.5,4L12,10L17.5,4M12,9L12,15M8,21.5L12,15L16,21.5"/>
+</vector>
