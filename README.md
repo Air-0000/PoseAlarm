@@ -6,6 +6,17 @@
 
 ---
 
+## 下载
+
+| 线路 | 地址 | 说明 |
+|---|---|---|
+| Gitee 发行版 | https://gitee.com/Air-0000/posealarm-update/releases | 国内推荐，下载快 |
+| GitHub 发行版 | https://github.com/Air-0000/PoseAlarm/releases | 备用 |
+
+安装后 App 会在启动时自动检查更新，也可以在右上角菜单「检查更新」手动检查。
+
+---
+
 ## 核心特性
 
 - **端侧离线姿势识别**：基于 ML Kit Pose Detection，模型随 APK 打包，不联网。
@@ -34,7 +45,12 @@ app/src/main/java/com/posealarm/
 ├── BootReceiver.java      # 开机 / 改时间后重新排定
 ├── AlarmStore.java        # 闹钟列表存储 (SharedPreferences JSON)
 ├── Alarm.java             # 闹钟数据模型与下次响铃时间计算
+├── AppUpdateManager.java  # 应用内更新：同时检测 Gitee / GitHub，下载、校验、安装
+├── UpdateSourceResolver.java # 更新源优先级与下载地址回退 (纯 Java，有单元测试)
+├── StyledToast.java       # 黑底黄框提示条
 └── HazardStripeView.java  # 黄黑警示条纹
+scripts/release.sh         # 发版：编译测试 → version.json → 打标签 → GitHub / Gitee 发行版
+scripts/publish_gitee.sh   # 发布到 Gitee (需要 GITEE_TOKEN)
 prototype-web/             # 最早的网页版原型 (MediaPipe)
 ```
 
@@ -52,3 +68,22 @@ prototype-web/             # 最早的网页版原型 (MediaPipe)
 ./gradlew assembleDebug
 # 输出：app/build/outputs/apk/debug/app-debug.apk
 ```
+
+---
+
+## 应用内更新与发版
+
+App 启动时同时请求两个 `version.json`，Gitee 4 秒内回应就用 Gitee，否则用 GitHub；菜单「更新服务器设置」可以填自定义地址 (如局域网服务器)，会最优先使用。
+安装包依次尝试 Gitee 附件 → GitHub 附件，下载后校验大小与 SHA-256。
+
+发新版本：
+
+1. 修改 `app/build.gradle` 的 `versionCode` / `versionName`，合并到 `main`
+2. 把更新说明写进文本文件，例如 `notes.txt`
+3. 运行：
+
+```bash
+GITEE_TOKEN=<Gitee 私人令牌> scripts/release.sh notes.txt
+```
+
+脚本会编译测试、生成并提交 `version.json`、打标签，然后发布到 GitHub 和 Gitee。不设置 `GITEE_TOKEN` 时只发布 GitHub，之后可单独运行 `scripts/publish_gitee.sh <标签>` 补发 Gitee。

@@ -14,6 +14,8 @@
         android:minHeight="?attr/actionBarSize"
         android:background="@color/bar_bg"
         android:theme="@style/ThemeOverlay.PoseAlarm.Toolbar"
+        app:popupTheme="@style/ThemeOverlay.PoseAlarm.Popup"
+        app:menu="@menu/menu_main"
         app:title="@string/app_name"
         app:titleTextAppearance="@style/TextAppearance.PoseAlarm.ToolbarTitle"
         app:titleTextColor="@color/hazard"

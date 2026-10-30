@@ -109,6 +109,7 @@
             app:indicatorColor="@color/hazard"
             app:trackColor="#333333"
             app:trackCornerRadius="0dp"
+            app:trackStopIndicatorSize="0dp"
             app:trackThickness="12dp" />
 
         <TextView
