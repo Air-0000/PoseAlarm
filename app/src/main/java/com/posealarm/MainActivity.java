@@ -68,6 +68,28 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btn_permission).setOnClickListener(v -> {
             if (fixPermission != null) fixPermission.run();
         });
+        toolbar.setOnMenuItemClickListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.action_check_update) {
+                AppUpdateManager.getInstance().checkUpdate(this, true);
+            } else if (id == R.id.action_download_links) {
+                AppUpdateManager.getInstance().showDownloadLinksDialog(this);
+            } else if (id == R.id.action_update_url) {
+                AppUpdateManager.getInstance().showConfigureUrlDialog(this);
+            } else {
+                return false;
+            }
+            return true;
+        });
+
+        // 启动后静默检测线上新版本
+        if (savedInstanceState == null) {
+            toolbar.postDelayed(() -> {
+                if (!isFinishing() && !isDestroyed()) {
+                    AppUpdateManager.getInstance().checkUpdate(MainActivity.this, false);
+                }
+            }, 1500);
+        }
     }
 
     @Override

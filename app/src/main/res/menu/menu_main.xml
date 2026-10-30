@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_check_update"
+        android:title="检查更新"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_download_links"
+        android:title="其他下载地址"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_update_url"
+        android:title="更新服务器设置"
+        app:showAsAction="never" />
+</menu>

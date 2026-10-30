@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:paddingTop="22dp"
+    android:paddingBottom="8dp">
+
+    <TextView
+        android:id="@+id/tv_progress_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="正在下载新版本安装包..."
+        android:textAppearance="@style/TextAppearance.PoseAlarm.DialogTitle"
+        android:textSize="16sp" />
+
+    <!-- 粗框直角进度条 (bg_progress_hard) -->
+    <ProgressBar
+        android:id="@+id/pb_update_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="18dp"
+        android:layout_marginTop="18dp"
+        android:max="100"
+        android:maxHeight="18dp"
+        android:minHeight="18dp"
+        android:progress="0"
+        android:progressDrawable="@drawable/bg_progress_hard" />
+
+    <TextView
+        android:id="@+id/tv_progress_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:fontFamily="sans-serif-condensed"
+        android:text="准备连接下载服务器..."
+        android:textColor="@color/text_secondary"
+        android:textSize="13sp" />
+</LinearLayout>

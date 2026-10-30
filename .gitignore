@@ -16,3 +16,6 @@ local.properties
 captures/
 .externalNativeBuild/
 .cxx/
+
+# Release output
+dist/
