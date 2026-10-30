@@ -4,8 +4,8 @@
 # 用法：
 #   1. 先改好 app/build.gradle 里的 versionCode / versionName，合并到 main
 #   2. 把更新说明写进一个文本文件 (每行一条，App 内更新弹窗直接显示)
-#   3. GITEE_TOKEN=<你的 Gitee 私人令牌> scripts/release.sh 更新说明.txt
-#      没设置 GITEE_TOKEN 时只发布到 GitHub，Gitee 那一步会提示手动补上
+#   3. scripts/release.sh 更新说明.txt
+#      Gitee 令牌从钥匙串 gitee-token 读取 (与 CheckMarkScanner 共用)，也可用环境变量 GITEE_TOKEN 指定
 #
 # 下载线路：
 #   - Gitee 公开仓库 Air-0000/posealarm-update：version.json + 发行版附件 (国内快，App 优先检测)
@@ -72,15 +72,8 @@ gh release create "$TAG" "dist/$APK_NAME" dist/version.json \
   --repo "$GITHUB_REPO" --verify-tag \
   --title "PoseAlarm $TAG" --notes-file "$NOTES_FILE"
 
-if [[ -z ${GITEE_TOKEN:-} ]]; then
-  cat <<EOF
-
-==> 没有设置 GITEE_TOKEN，跳过 Gitee。手动补发：
-    1. 打开 https://gitee.com/$GITEE_OWNER/$GITEE_REPO/releases 新建发行版，标签 $TAG，附件上传 dist/$APK_NAME
-    2. 把仓库里的 version.json 替换为 dist/version.json
-    (或者设置 GITEE_TOKEN 后运行 scripts/publish_gitee.sh $TAG)
-EOF
-  exit 0
+echo "==> 发布到 Gitee"
+if ! scripts/publish_gitee.sh "$TAG"; then
+  echo "Gitee 发布失败 (GitHub 已发布成功)。排查后单独重试：scripts/publish_gitee.sh $TAG"
+  exit 1
 fi
-
-scripts/publish_gitee.sh "$TAG"

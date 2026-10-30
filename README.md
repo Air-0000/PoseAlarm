@@ -50,7 +50,7 @@ app/src/main/java/com/posealarm/
 ├── StyledToast.java       # 黑底黄框提示条
 └── HazardStripeView.java  # 黄黑警示条纹
 scripts/release.sh         # 发版：编译测试 → version.json → 打标签 → GitHub / Gitee 发行版
-scripts/publish_gitee.sh   # 发布到 Gitee (需要 GITEE_TOKEN)
+scripts/publish_gitee.sh   # 发布到 Gitee (令牌取自钥匙串 gitee-token)
 prototype-web/             # 最早的网页版原型 (MediaPipe)
 ```
 
@@ -83,7 +83,7 @@ App 启动时同时请求两个 `version.json`，Gitee 4 秒内回应就用 Gite
 3. 运行：
 
 ```bash
-GITEE_TOKEN=<Gitee 私人令牌> scripts/release.sh notes.txt
+scripts/release.sh notes.txt
 ```
 
-脚本会编译测试、生成并提交 `version.json`、打标签，然后发布到 GitHub 和 Gitee。不设置 `GITEE_TOKEN` 时只发布 GitHub，之后可单独运行 `scripts/publish_gitee.sh <标签>` 补发 Gitee。
+脚本会编译测试、生成并提交 `version.json`、打标签，然后发布到 GitHub 和 Gitee。Gitee 令牌从 macOS 钥匙串 `gitee-token` 读取 (也可用环境变量 `GITEE_TOKEN`)；Gitee 那一步失败时可单独运行 `scripts/publish_gitee.sh <标签>` 重试。
